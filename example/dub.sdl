@@ -1,0 +1,5 @@
+name "example"
+description "App example that uses simpleconfig"
+dependency "simpleconfig" path=".."
+mainSourceFile "app.d"
+targetType "executable"

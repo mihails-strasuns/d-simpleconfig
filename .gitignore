@@ -1,0 +1,11 @@
+.dub
+docs.json
+__dummy.html
+docs/
+libsimpleconfig.a
+simpleconfig-test-*
+example/example
+*.exe
+*.o
+*.obj
+*.lst
