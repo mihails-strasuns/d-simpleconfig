@@ -8,19 +8,19 @@ private string currentProcessBinary ()
 
     version (Windows)
     {
-        import core.sys.windows.psapi : GetProcessImageFileName;
+        import core.sys.windows.psapi : GetProcessImageFileNameA;
+        import core.sys.windows.winbase : GetCurrentProcess;
+
         char[1024] buffer;
-        auto ln = GetProcessImageFileName(thisProcessID(), buffer.ptr, buffer.length);
-        auto exec = buffer[0 .. ln];
+        auto ln = GetProcessImageFileNameA(GetCurrentProcess(), buffer.ptr, buffer.length);
+        return buffer[0 .. ln].idup;
     }
     else version (Posix)
     {
         import std.file : readLink;
         import std.format;
-        auto exec = readLink(format("/proc/%s/exe", thisProcessID()));
+        return readLink(format("/proc/%s/exe", thisProcessID()));
     }
-
-    return exec;
 }
 
 public void readConfiguration (S) (ref S dst)
@@ -39,7 +39,7 @@ public void readConfiguration (S) (ref S dst)
     ];
 
     version (Windows)
-        locations ~= environment["LOCALAPPDATA%"];
+        locations ~= environment["LOCALAPPDATA"];
     else version (Posix)
         locations ~= environment["XDG_CONFIG_HOME"].ifThrown("~/.config");
 

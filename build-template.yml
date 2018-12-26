@@ -10,11 +10,9 @@ steps:
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: $(archive)
-      destinationFolder: 'ldc'
+      destinationFolder: ldc
 
-  - bash: $(bindir)/dub test
-    displayName: Run unittests
-
-  - bash: cd example && $(bindir)/dub run -q -- --one value --two 42
-    displayName: Build application
-
+  - bash: ./test.sh
+    env:
+      bindir: $(bindir)
+    displayName: Run tests
