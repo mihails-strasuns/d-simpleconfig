@@ -1,14 +1,12 @@
+/**
+    Defines UDAs to be used with configuration structs.
+*/
 module simpleconfig.attributes;
 
 // In this module @property is used for a UDA function to use return type
 // as an attribute, not the function itself.
 
-package struct CLI
-{
-    string full;
-    dchar  single;
-}
-
+/// Marks field to be read from command-line arguments
 public CLI cli (string description = "") @property
 {
     import std.array : split;
@@ -25,12 +23,19 @@ public CLI cli (string description = "") @property
     }
 }
 
+/// Marks field to be read from a configuration file
+public CFG cfg (string key = "") @property
+{
+    return CFG(key);
+}
+
 package struct CFG
 {
     string key;
 }
 
-public CFG cfg (string key = "") @property
+package struct CLI
 {
-    return CFG(key);
+    string full;
+    dchar  single;
 }
