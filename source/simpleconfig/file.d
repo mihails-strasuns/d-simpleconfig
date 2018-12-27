@@ -2,27 +2,7 @@ module simpleconfig.file;
 
 import simpleconfig.attributes;
 
-private string currentProcessBinary ()
-{
-    import std.process : thisProcessID;
-
-    version (Windows)
-    {
-        import core.sys.windows.psapi : GetProcessImageFileNameA;
-        import core.sys.windows.winbase : GetCurrentProcess;
-
-        char[1024] buffer;
-        auto ln = GetProcessImageFileNameA(GetCurrentProcess(), buffer.ptr, buffer.length);
-        return buffer[0 .. ln].idup;
-    }
-    else version (Posix)
-    {
-        import std.file : readLink;
-        import std.format;
-        return readLink(format("/proc/%s/exe", thisProcessID()));
-    }
-}
-
+/// See `simpleconfig.readConfiguration`
 public void readConfiguration (S) (ref S dst)
 {
     static assert (is(S == struct), "Only structs are supported as configuration target");
@@ -58,6 +38,30 @@ public void readConfiguration (S) (ref S dst)
     }
 }
 
+/**
+    Returns: fully-qualified filesystem path to the currently running executable
+*/
+private string currentProcessBinary ()
+{
+    import std.process : thisProcessID;
+
+    version (Windows)
+    {
+        import core.sys.windows.psapi : GetProcessImageFileNameA;
+        import core.sys.windows.winbase : GetCurrentProcess;
+
+        char[1024] buffer;
+        auto ln = GetProcessImageFileNameA(GetCurrentProcess(), buffer.ptr, buffer.length);
+        return buffer[0 .. ln].idup;
+    }
+    else version (Posix)
+    {
+        import std.file : readLink;
+        import std.format;
+        return readLink(format("/proc/%s/exe", thisProcessID()));
+    }
+}
+
 private template resolveName (alias Field)
 {
     import std.traits;
@@ -65,6 +69,20 @@ private template resolveName (alias Field)
     enum resolveName = getUDAs!(Field, CFG)[0].key.length
         ? getUDAs!(Field, CFG)[0].key
         : __traits(identifier, Field);
+}
+
+unittest
+{
+    struct S
+    {
+        @cfg
+        string field1;
+        @cfg("renamed")
+        string field2;
+    }
+
+    static assert (resolveName!(S.field1) == "field1");
+    static assert (resolveName!(S.field2) == "renamed");
 }
 
 private string[2] extractKV (string line)
@@ -88,7 +106,7 @@ unittest
 }
 
 private void readConfigurationImpl (S) (ref S dst, string src)
-{    
+{
     import std.traits;
     import std.algorithm;
     import std.range;
@@ -103,8 +121,8 @@ private void readConfigurationImpl (S) (ref S dst, string src)
         bool assign = false;
 
         static foreach (Field; getSymbolsByUDA!(S, CFG))
-        {            
-            if (kv[0] == resolveName!Field)                
+        {
+            if (kv[0] == resolveName!Field)
             {
                 auto pfield = &__traits(getMember, dst, __traits(identifier, Field));
                 *pfield = to!(typeof(*pfield))(kv[1]);

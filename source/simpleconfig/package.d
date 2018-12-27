@@ -1,3 +1,6 @@
+/**
+    Check README.md for a usage example and abstract description.
+*/
 module simpleconfig;
 
 public import simpleconfig.attributes;
@@ -22,7 +25,7 @@ public import simpleconfig.attributes;
 void readConfiguration (S) (ref S dst)
 {
     static assert (is(S == struct), "Only structs are supported as configuration target");
-    
+
     static import simpleconfig.file;
     simpleconfig.file.readConfiguration(dst);
 

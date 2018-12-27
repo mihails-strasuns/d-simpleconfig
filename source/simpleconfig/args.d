@@ -2,10 +2,11 @@ module simpleconfig.args;
 
 import simpleconfig.attributes;
 
+/// See `simpleconfig.readConfiguration`
 public void readConfiguration (S) (ref S dst)
 {
     static assert (is(S == struct), "Only structs are supported as configuration target");
-    
+
     import core.runtime;
 
     readConfigurationImpl(dst, Runtime.args());
@@ -20,8 +21,24 @@ private template resolveName (alias Field)
         : CLI(__traits(identifier, Field));
 }
 
+unittest
+{
+    struct S
+    {
+        @cli
+        string field1;
+        @cli("renamed|r")
+        string field2;
+    }
+
+    static assert (resolveName!(S.field1).full == "field1");
+    static assert (resolveName!(S.field1).single == dchar.init);
+    static assert (resolveName!(S.field2).full == "renamed");
+    static assert (resolveName!(S.field2).single == 'r');
+}
+
 private void readConfigurationImpl (S) (ref S dst, string[] src)
-{    
+{
     import std.traits;
     import std.algorithm;
     import std.range.primitives;
@@ -32,7 +49,7 @@ private void readConfigurationImpl (S) (ref S dst, string[] src)
         bool assign = false;
 
         static foreach (Field; getSymbolsByUDA!(S, CLI))
-        {            
+        {
             if (arg.startsWith("--"))
                 assign = resolveName!Field.full == arg[2 .. $];
             else if (arg.startsWith("-"))
