@@ -12,7 +12,7 @@ steps:
       archiveFilePatterns: $(archive)
       destinationFolder: ldc
 
-  - bash: ./test.sh
+  - bash: ./ci.sh
     env:
       bindir: $(bindir)
     displayName: Run tests
