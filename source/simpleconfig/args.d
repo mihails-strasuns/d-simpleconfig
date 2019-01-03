@@ -3,13 +3,12 @@ module simpleconfig.args;
 import simpleconfig.attributes;
 
 /// See `simpleconfig.readConfiguration`
-public void readConfiguration (S) (ref S dst)
+public string[] readConfiguration (S) (ref S dst)
 {
     static assert (is(S == struct), "Only structs are supported as configuration target");
 
-    import core.runtime;
-
-    readConfigurationImpl(dst, Runtime.args());
+    import core.runtime;    
+    return readConfigurationImpl(dst, Runtime.args());
 }
 
 private template resolveName (alias Field)
@@ -37,16 +36,24 @@ unittest
     static assert (resolveName!(S.field2).single == 'r');
 }
 
-private void readConfigurationImpl (S) (ref S dst, string[] src)
+private string[] readConfigurationImpl (S) (ref S dst, string[] src)
 {
     import std.traits;
     import std.algorithm;
     import std.range.primitives;
     import std.conv;
 
+    string[] remaining_args;
+    bool assign = false;
+
     rt: foreach (idx, arg; src)
     {
-        bool assign = false;
+        if (assign)
+        {
+            // skip argument of already processed flag
+            assign = false;
+            continue;
+        }
 
         static foreach (Field; getSymbolsByUDA!(S, CLI))
         {
@@ -62,7 +69,11 @@ private void readConfigurationImpl (S) (ref S dst, string[] src)
                 continue rt;
             }
         }
+
+        remaining_args ~= arg;
     }
+
+    return remaining_args;
 }
 
 unittest
@@ -80,7 +91,7 @@ unittest
 
     Config config;
 
-    readConfigurationImpl(config, [
+    auto remaining = readConfigurationImpl(config, [
         "--field1", "value1",
         "--alias", "42",
         "-l", "value3",
@@ -91,4 +102,6 @@ unittest
     assert(config.field2 == 42);
     assert(config.field3 == "value3");
     assert(config.field4 == "");
+
+    assert(remaining == [ "--field4", "ignored" ]);
 }
