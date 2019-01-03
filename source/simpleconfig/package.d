@@ -21,8 +21,11 @@ public import simpleconfig.attributes;
     Params:
         dst = struct instance which will store configuration data
             and defines how it should be read
+    
+    Returns:
+        CLI argument array with processed flags removed
 */
-void readConfiguration (S) (ref S dst)
+string[] readConfiguration (S) (ref S dst)
 {
     static assert (is(S == struct), "Only structs are supported as configuration target");
 
@@ -30,10 +33,12 @@ void readConfiguration (S) (ref S dst)
     simpleconfig.file.readConfiguration(dst);
 
     static import simpleconfig.args;
-    simpleconfig.args.readConfiguration(dst);
+    auto args = simpleconfig.args.readConfiguration(dst);
 
     static if (is(typeof(S.finalizeConfig())))
         dst.finalizeConfig();
+
+    return args;
 }
 
 ///
