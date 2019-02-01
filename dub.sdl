@@ -3,4 +3,3 @@ description "Simple utility to combine CLI args and config file into single conf
 authors "Mihails Strasuns"
 copyright "Copyright © 2018, Mihails Strasuns"
 license "BSL"
-libs "psapi" platform="windows"

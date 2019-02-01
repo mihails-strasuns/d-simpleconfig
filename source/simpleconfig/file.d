@@ -47,11 +47,10 @@ private string currentProcessBinary ()
 
     version (Windows)
     {
-        import core.sys.windows.psapi : GetProcessImageFileNameA;
-        import core.sys.windows.winbase : GetCurrentProcess;
+        import core.sys.windows.winbase : GetModuleFileNameA;
 
         char[1024] buffer;
-        auto ln = GetProcessImageFileNameA(GetCurrentProcess(), buffer.ptr, buffer.length);
+        auto ln = GetModuleFileNameA(null, buffer.ptr, buffer.length);
         return buffer[0 .. ln].idup;
     }
     else version (Posix)
