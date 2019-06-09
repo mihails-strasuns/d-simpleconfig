@@ -10,8 +10,9 @@ public void readConfiguration (S) (ref S dst)
     import std.process : environment;
     import std.exception : ifThrown;
     import std.path : dirName;
+    import std.file : thisExePath;
 
-    auto executable = currentProcessBinary();
+    auto executable = thisExePath();
 
     string[] locations = [
         ".",
@@ -35,29 +36,6 @@ public void readConfiguration (S) (ref S dst)
             readConfigurationImpl(dst, content);
             return;
         }
-    }
-}
-
-/**
-    Returns: fully-qualified filesystem path to the currently running executable
-*/
-private string currentProcessBinary ()
-{
-    import std.process : thisProcessID;
-
-    version (Windows)
-    {
-        import core.sys.windows.winbase : GetModuleFileNameA;
-
-        char[1024] buffer;
-        auto ln = GetModuleFileNameA(null, buffer.ptr, buffer.length);
-        return buffer[0 .. ln].idup;
-    }
-    else version (Posix)
-    {
-        import std.file : readLink;
-        import std.format;
-        return readLink(format("/proc/%s/exe", thisProcessID()));
     }
 }
 
