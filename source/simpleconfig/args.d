@@ -42,30 +42,60 @@ private string[] readConfigurationImpl (S) (ref S dst, string[] src)
     import std.algorithm;
     import std.range.primitives;
     import std.conv;
+    import std.string;
 
     string[] remaining_args;
-    bool assign = false;
+    bool skip = false;
 
     rt: foreach (idx, arg; src)
     {
-        if (assign)
+        string key;
+        string value;
+
+        if (skip)
         {
             // skip argument of already processed flag
-            assign = false;
+            skip = false;
             continue;
         }
 
+        // check if this is an argument
+
+        if (arg.startsWith("--"))
+            key = arg[2 .. $];
+        else if (arg.startsWith("-"))
+            key = arg[1 .. $];
+        else
+        {
+            remaining_args ~= arg;
+            continue;
+        }
+
+        // check if this is '-k v' or '-k=v' format
+
+        auto pos = key.indexOf('=');
+
+        if (pos != -1)
+        {
+            value = key[pos + 1 .. $];
+            key = key[0 .. pos];
+        }
+        else
+        {
+            value = src[idx + 1];
+        }
+
+        // check if it matches attributed fields
+
         static foreach (Field; getSymbolsByUDA!(S, CLI))
         {
-            if (arg.startsWith("--"))
-                assign = resolveName!Field.full == arg[2 .. $];
-            else if (arg.startsWith("-"))
-                assign = resolveName!Field.single == arg[1 .. $].front;
-
-            if (assign)
+            if (   resolveName!Field.full == key
+                || resolveName!Field.single == key.front)
             {
                 auto pfield = &__traits(getMember, dst, __traits(identifier, Field));
-                *pfield = to!(typeof(*pfield))(src[idx + 1]);
+                *pfield = to!(typeof(*pfield))(value);
+                // skip next arg if this was a space-delimited key-valye pair
+                skip = pos == -1;
                 continue rt;
             }
         }
@@ -87,6 +117,8 @@ unittest
         @cli("long|l")
         string field3;
         string field4;
+        @cli
+        string field5;
     }
 
     Config config;
@@ -95,13 +127,15 @@ unittest
         "--field1", "value1",
         "--alias", "42",
         "-l", "value3",
-        "--field4", "ignored"
+        "--field4", "ignored",
+        "--field5=syntax",
     ]);
 
     assert(config.field1 == "value1");
     assert(config.field2 == 42);
     assert(config.field3 == "value3");
     assert(config.field4 == "");
+    assert(config.field5 == "syntax");
 
     assert(remaining == [ "--field4", "ignored" ]);
 }
