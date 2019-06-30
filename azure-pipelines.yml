@@ -1,21 +1,38 @@
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    windows:
+      imageName: 'vs2017-win2016'
 
-jobs:
-  - job: Linux
-    variables:
-      url: https://github.com/ldc-developers/ldc/releases/download/v1.13.0/ldc2-1.13.0-linux-x86_64.tar.xz
-      bindir: ldc/ldc2-1.13.0-linux-x86_64/bin
-      archive: ldc.tar.xz
-    pool:
-      vmImage: 'ubuntu 16.04'
-    steps:
-      - template: build-template.yml
+pool:
+  vmImage: $(imageName)
 
-  - job: Windows
-    variables:
-      url: https://github.com/ldc-developers/ldc/releases/download/v1.13.0/ldc2-1.13.0-windows-multilib.7z
-      bindir: ldc/ldc2-1.13.0-windows-multilib/bin
-      archive: ldc.7z
-    pool:
-      vmImage: 'vs2017-win2016'
-    steps:
-      - template: build-template.yml
+variables:
+  tooldir: $(Agent.ToolsDirectory)/dlang
+
+steps:
+  - bash: mkdir -p $(tooldir)
+    displayName: Initialize tool directory
+
+  - powershell: wget -O $(tooldir)/dc.exe https://github.com/mihails-strasuns/dc/releases/download/v1.0.2/dc.exe
+    displayName: Download D installation tool (Windows)
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+
+  - bash: wget -O $(tooldir)/dc https://github.com/mihails-strasuns/dc/releases/download/v1.0.2/dc && chmod +x $(tooldir)/dc
+    displayName: Download D installation tool (Linux)
+    condition: eq(variables['Agent.OS'], 'Linux')
+
+  - bash: $(tooldir)/dc use ldc-1.14.0
+    displayName: Install D compiler
+
+  - powershell: Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};$(tooldir)/bin";
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    displayName: Add bin to CI PATH (Windows)
+
+  - bash: echo "##vso[task.setvariable variable=PATH;]$PATH:$(tooldir)/bin";
+    condition: eq(variables['Agent.OS'], 'Linux')
+    displayName: Add bin to CI PATH (Linux)
+
+  - bash: ./ci.sh
+    displayName: Run tests
