@@ -1,0 +1,28 @@
+name: Test the action
+on: [push, pull_request]
+
+jobs:
+    test:
+        name: Test
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macOS-latest]
+                dc: [dmd-2.088.0, ldc-1.17.0]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@master
+
+            - name: Install D compiler
+              uses: mihails-strasuns/setup-dlang@v0
+              with:
+                  compiler: ${{ matrix.dc }}
+
+            - name: Unit tests
+              run: dub -q test
+
+            - name: Example
+              shell: bash
+              run: |
+                cd example
+                output=`dub run --arch=x86_64 -q -- --one value --two 42`
+                test "$output" = 'Config("value", 42, " strange value")'
