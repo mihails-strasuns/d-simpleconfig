@@ -7,13 +7,13 @@ jobs:
         strategy:
             matrix:
                 os: [ubuntu-latest, windows-latest, macOS-latest]
-                dc: [dmd-2.088.0, ldc-1.17.0]
+                dc: [dmd-latest, ldc-latest]
         runs-on: ${{ matrix.os }}
         steps:
             - uses: actions/checkout@master
 
             - name: Install D compiler
-              uses: mihails-strasuns/setup-dlang@v0
+              uses: dlang-community/setup-dlang@v1
               with:
                   compiler: ${{ matrix.dc }}
 
