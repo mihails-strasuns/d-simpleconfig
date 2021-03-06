@@ -91,7 +91,7 @@ private void readConfigurationImpl (S) (ref S dst, string src)
 
     rt: foreach (line; src.splitter("\n"))
     {
-        if (line.length == 0)
+        if (line.length == 0 || line.startsWith("#"))
             continue;
 
         auto kv = extractKV(line);
@@ -125,6 +125,7 @@ unittest
     Config config;
 
     readConfigurationImpl(config, `
+# this is a comment
 field1 = value1
 alias = 42
 with space = value3
